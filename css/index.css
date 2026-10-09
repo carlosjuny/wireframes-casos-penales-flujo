@@ -94,3 +94,21 @@ a{color:inherit;text-decoration:none;}
   .hero h1{font-size:24px;}
   .content{padding:30px 16px 60px;}
 }
+
+/* ============================================================
+   NUEVO DISEÑO · SOLO COLORES (login y entrada)
+   ============================================================ */
+:root{
+  --bg:#f7f7f8; --border:#e3e5e9; --border-strong:#d3d7de;
+  --accent:#7a6652; --accent-soft:#f1ece6;
+  --bronze:#7a6652; --bronze-hover:#6a5846; --nav-active:#51627d;
+}
+.topbar{background:#0a1628;border-bottom-color:rgba(255,255,255,.12);color:#e8ecf3;}
+.session small{color:#a9b4c6;}
+.avatar{background:var(--nav-active);}
+.btn.primary{background:var(--bronze);border-color:var(--bronze);}
+.btn.primary:hover{background:var(--bronze-hover);border-color:var(--bronze-hover);}
+.btn:hover{border-color:var(--bronze);}
+.demo-chip:hover{border-color:var(--bronze);}
+.module .flow{background:#f4f6f9;}
+.tag{background:#f4f6f9;}

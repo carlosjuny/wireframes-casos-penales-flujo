@@ -196,6 +196,10 @@ const FLOW_ORDER = ['director','abogado','cliente','administrativo','socio'];
 function nextRoleId(id){ const i=FLOW_ORDER.indexOf(id); return i>=0 && i<FLOW_ORDER.length-1 ? FLOW_ORDER[i+1] : null; }
 
 const HECHOS = { H1:'Ejecución del contrato', H2:'Manejo de recursos', H3:'Conocimiento directivo', H4:'Estructura societaria' };
+/* Hechos por caso: cada expediente parte de los hechos base y puede agregar los suyos. */
+function hechosDe(c){ return (c && c.hechos) || HECHOS; }
+function hechoNom(c, code){ return hechosDe(c)[code] || ''; }
+function siguienteCodigoHecho(c){ const n = Object.keys(hechosDe(c)).map(k=>parseInt(k.slice(1),10)).filter(Number.isFinite); return 'H' + ((n.length ? Math.max(...n) : 0) + 1); }
 
 const CASES = [
   {
@@ -720,7 +724,7 @@ function buildMatriz(){
       <td style="font-weight:600;max-width:180px;">${row.ev}</td>
       <td>${row.tipo}</td>
       <td style="max-width:220px;">${row.pretende}</td>
-      <td><span class="hecho-tag">${row.hecho} · ${HECHOS[row.hecho]}</span></td>
+      <td><span class="hecho-tag">${row.hecho} · ${hechoNom(c,row.hecho)}</span></td>
       <td>${row.fuente}</td>
       <td><span class="pill-state ${row.estado}">${stateLabel(row.estado)}</span></td>
       <td><span class="pill-relev ${row.relev}">${relevLabel(row.relev)}</span></td>
@@ -730,8 +734,44 @@ function buildMatriz(){
     matrizBody.appendChild(tr);
   });
   matrizCount.textContent = c.matriz.length + ' elementos registrados';
+  renderHechosUI(c);
 }
 
+
+/* hechos del caso: resumen en la matriz, selector del modal y alta de hechos nuevos */
+function renderHechosUI(c){
+  const hs = hechosDe(c);
+  document.getElementById('matrizHechosInfo').textContent = 'Hechos: ' + Object.keys(hs).map(k=>k+' '+hs[k]).join(' · ');
+  const sel = document.getElementById('fHecho'), prev = sel.value;
+  sel.innerHTML = Object.keys(hs).map(k=>`<option value="${k}">${k} · ${String(hs[k]).replace(/</g,'&lt;')}</option>`).join('');
+  if(prev && hs[prev]) sel.value = prev;
+}
+const hechoModal = document.getElementById('hechoModal');
+function abrirNuevoHecho(){
+  document.getElementById('hCodigo').value = siguienteCodigoHecho(currentCase());
+  document.getElementById('hNombre').value = '';
+  hechoModal.classList.add('show');
+  document.getElementById('hNombre').focus();
+}
+['btnNuevoHechoBar','btnNuevoHechoModal'].forEach(id=>document.getElementById(id).addEventListener('click', abrirNuevoHecho));
+['hechoCloseBtn','hechoCancelBtn'].forEach(id=>document.getElementById(id).addEventListener('click', ()=> hechoModal.classList.remove('show')));
+function guardarNuevoHecho(){
+  const c = currentCase();
+  const nombre = document.getElementById('hNombre').value.trim();
+  if(!nombre){ showToast('Ingresa el nombre del hecho.'); return; }
+  if(Object.values(hechosDe(c)).some(n=>n.toLowerCase()===nombre.toLowerCase())){ showToast('Ya existe un hecho con ese nombre.'); return; }
+  if(!c.hechos) c.hechos = Object.assign({}, HECHOS); // copia propia del caso
+  const code = siguienteCodigoHecho(c);
+  c.hechos[code] = nombre;
+  renderHechosUI(c);
+  document.getElementById('fHecho').value = code;
+  hechoModal.classList.remove('show');
+  showToast('Hecho ' + code + ' agregado al caso.');
+  if(typeof logAudit==='function') logAudit(c, 'Registro de hecho', 'Fact', code, nombre, {});
+  if(typeof refreshCase==='function') refreshCase();
+}
+document.getElementById('hechoSaveBtn').addEventListener('click', guardarNuevoHecho);
+document.getElementById('hNombre').addEventListener('keydown', e=>{ if(e.key==='Enter') guardarNuevoHecho(); });
 /* matriz modal */
 const matrizModal = document.getElementById('matrizModal');
 const fResponsable = document.getElementById('fResponsable');
@@ -935,7 +975,7 @@ const FAQ = [
   {cat:'Uso de AI Agents', q:'¿Cómo sé qué AI Agent usar?', a:'La plataforma muestra únicamente los agentes que corresponden a tu rol activo, de modo que no tengas que elegir entre herramientas que no te aplican. Selecciona tu rol en el avatar superior derecho ("Cambiar rol") y entra a la vista "Agentes" en el menú lateral: allí verás solo las tarjetas de los agentes habilitados para tus responsabilidades. Cada tarjeta indica el rol al que pertenece y, con "Ver cómo funciona", puedes leer su documentación completa (qué información usa, qué puede sugerir y qué no) antes de activarlo con "Usar agente".'},
   {cat:'Uso de AI Agents', q:'¿El AI Agent puede tomar decisiones por mí?', a:'No. El agente es un asistente de apoyo, no un sustituto del criterio profesional. La IA puede analizar información del expediente, identificar patrones, redactar borradores o resumir evidencia, pero no puede cerrar un caso, aprobar una evidencia, emitir un concepto jurídico definitivo ni modificar el expediente por sí misma. Todo resultado que genera queda marcado como propuesta y debe ser revisado, corregido si hace falta y aprobado explícitamente por el rol correspondiente (Abogado, Director o Socio, según la etapa) antes de incorporarse formalmente al caso.'},
   {cat:'Gestión de casos', q:'¿Cómo abro un caso activo?', a:'Ve a "Casos Penales" en el menú lateral: allí aparece el listado completo de casos visibles para tu rol, con filtros por estado, responsable, riesgo y fecha. Haz clic sobre cualquier fila de la tabla para abrir el detalle del caso, donde encontrarás la información general (cliente, tipo de proceso, etapa), el flujo de trabajo entre roles, la Matriz Probatoria, las actuaciones registradas y el historial de cambios. Desde ese mismo detalle puedes activar un AI Agent con el contexto del caso ya cargado.'},
-  {cat:'Gestión de casos', q:'¿Quién puede crear un caso nuevo?', a:'La creación de un caso nuevo corresponde al Director jurídico o al Coordinador de caso, quien recibe el requerimiento inicial del cliente o de la firma y lo registra en la plataforma usando el botón "+ Nuevo caso" en "Casos Penales". Al crearlo se definen datos básicos como cliente, tipo de proceso, equipo asignado y nivel de sensibilidad; a partir de ahí el caso queda disponible para que los demás roles (Abogado, Administrativo, Cliente, Socio) trabajen según sus permisos.'},
+  {cat:'Gestión de casos', q:'¿Quién puede crear un caso nuevo?', a:'La creación de un caso nuevo corresponde al Socio, al Director jurídico o al Coordinador de caso, quien recibe el requerimiento inicial del cliente o de la firma y lo registra en la plataforma usando el botón "+ Nuevo caso" en "Casos Penales". Al crearlo se definen datos básicos como cliente, tipo de proceso, equipo asignado y nivel de sensibilidad; a partir de ahí el caso queda disponible para que los demás roles (Abogado, Administrativo, Cliente, Socio) trabajen según sus permisos.'},
   {cat:'Matriz Probatoria', q:'¿Qué es la Matriz Probatoria?', a:'Es el registro central y estructurado de toda la evidencia asociada a un caso penal. Por cada elemento probatorio guarda: el documento o soporte, el tipo de prueba (testimonial, documental, pericial, etc.), el hecho específico que pretende demostrar, su fuente u origen, su estado de verificación, su nivel de relevancia para la teoría del caso, el responsable de gestionarla y observaciones adicionales. Sirve como columna vertebral del expediente: todos los roles la consultan para entender qué se ha probado, qué falta por recaudar y qué tan sólida es la evidencia disponible.'},
   {cat:'Matriz Probatoria', q:'¿Cómo agrego una evidencia?', a:'Dentro del detalle de un caso, en la pestaña de la Matriz Probatoria, usa el botón "+ Agregar evidencia". Se abrirá un formulario donde debes indicar el tipo de prueba, el hecho que sustenta, la fuente, el estado inicial (por ejemplo "Pendiente de recaudo") y el responsable de darle seguimiento. Una vez guardada, la evidencia queda visible en la matriz para todos los roles con acceso al caso, y puede actualizarse a medida que avanza su verificación.'},
   {cat:'Evidencias', q:'¿Qué significan los estados de evidencia?', a:'Cada evidencia de la Matriz Probatoria pasa por tres estados posibles: "Verificada" significa que el elemento ya fue confirmado, contrastado y está listo para sustentar la teoría del caso o presentarse formalmente; "En revisión" indica que se encuentra en proceso de validación (por ejemplo, siendo cotejada con otras fuentes o analizada por el Agente Probatorio); "Pendiente de recaudo" señala que todavía no ha sido obtenida, solicitada o cargada al expediente. Estos estados permiten priorizar el trabajo y detectar rápidamente vacíos probatorios del caso.'},

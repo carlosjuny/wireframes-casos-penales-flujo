@@ -6,6 +6,7 @@
 <title>PRÍAS CADAVID · Módulo 02 · Gestión de Casos Penales con Módulo Probatorio</title>
 <link rel="stylesheet" href="css/modulo02.css">
 <link rel="stylesheet" href="css/casos-penales.css">
+<link rel="stylesheet" href="css/tema-colores.css">
 </head>
 <body>
 <div class="app">
@@ -210,7 +211,8 @@
             <div class="matriz-wrap table-scroll">
               <div class="matriz-toolbar">
                 <span class="mt-info" id="matrizCount">0 elementos registrados</span>
-                <span class="mt-info">Hechos: H1 Ejecución del contrato · H2 Manejo de recursos · H3 Conocimiento directivo · H4 Estructura societaria</span>
+                <span class="mt-info" id="matrizHechosInfo"></span>
+                <button class="btn sm" id="btnNuevoHechoBar" type="button">+ Nuevo hecho</button>
               </div>
               <table class="matriz" style="min-width:1100px;">
                 <thead>
@@ -257,7 +259,7 @@
       <!-- ================= VISTA EJECUTIVA ================= -->
       <section id="view-ejecutiva" class="view">
         <div class="section-head">
-          <div><h2>Vista ejecutiva</h2><p>Avance, riesgos, casos críticos, decisiones pendientes e indicadores del Módulo 02.</p></div>
+          <div><h2>Dashboard</h2><p>Avance, riesgos, casos críticos, decisiones pendientes e indicadores del Módulo 02.</p></div>
           <div class="section-actions"><button class="btn" id="exBtnExport">Exportar resumen</button></div>
         </div>
         <div id="exBody"></div>
@@ -368,12 +370,8 @@
           </select>
         </div>
         <div class="form-field">
-          <label>Hecho relacionado</label>
+          <label style="display:flex;justify-content:space-between;align-items:center;">Hecho relacionado <button type="button" class="btn sm subtle" id="btnNuevoHechoModal" style="padding:2px 8px;">+ Nuevo hecho</button></label>
           <select id="fHecho">
-            <option value="H1">H1 · Ejecución del contrato</option>
-            <option value="H2">H2 · Manejo de recursos</option>
-            <option value="H3">H3 · Conocimiento directivo</option>
-            <option value="H4">H4 · Estructura societaria</option>
           </select>
         </div>
         <div class="form-field full"><label>Hecho que pretende demostrar</label><textarea id="fPretende" placeholder="Describe qué busca acreditar esta evidencia"></textarea></div>
@@ -404,6 +402,25 @@
       <div class="modal-foot" style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
         <button class="btn" id="matrizCancelBtn">Cancelar</button>
         <button class="btn primary" id="matrizSaveBtn">Guardar y vincular al caso</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="hechoModal" style="z-index:70;">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <div class="modal-head-l"><h3>Agregar nuevo hecho</h3></div>
+      <button class="drawer-close" id="hechoCloseBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-field full"><label>Código</label><input id="hCodigo" disabled></div>
+        <div class="form-field full"><label>Nombre del hecho</label><input id="hNombre" maxlength="80" placeholder="Ej. Desvío de anticipo"></div>
+      </div>
+      <div class="modal-foot" style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+        <button class="btn" id="hechoCancelBtn">Cancelar</button>
+        <button class="btn primary" id="hechoSaveBtn">Agregar hecho</button>
       </div>
     </div>
   </div>

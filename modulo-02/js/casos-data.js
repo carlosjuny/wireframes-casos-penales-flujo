@@ -80,6 +80,14 @@ const WF_CLIENTE_TXT = {
 const ETAPAS = ['Indagación preliminar','Investigación','Imputación','Acusación','Juicio oral','Recursos','Ejecución de sentencia'];
 const AREAS = ['Delitos contra la administración pública','Lavado de activos','Delitos económicos y financieros','Corrupción privada','Delitos contra la fe pública','Delitos contra el patrimonio económico'];
 const TIPOS_CASO = ['Defensa técnica','Representación de víctima','Investigación interna','Asesoría penal preventiva'];
+/* Datos procesales del caso (catálogos de ejemplo) */
+const CALIDADES_REP = ['Defensor del procesado','Apoderado de víctima','Apoderado de tercero civilmente responsable','Apoderado de tercero incorporado','Asesor externo'];
+const LEYES = ['Ley 906 de 2004 (sistema acusatorio)','Ley 600 de 2000 (sistema mixto)','Ley 1826 de 2017 (procedimiento abreviado)','Ley 1098 de 2006 (infancia y adolescencia)'];
+const DELITOS = ['Peculado por apropiación','Peculado por extensión','Peculado por uso','Contrato sin cumplimiento de requisitos legales','Interés indebido en la celebración de contratos','Cohecho','Concusión','Lavado de activos','Enriquecimiento ilícito','Fraude procesal','Falsedad en documento privado','Falsedad en documento público','Estafa','Abuso de confianza','Administración desleal','Defraudación o evasión tributaria','Corrupción privada','Concierto para delinquir'];
+const DESPACHOS = ['Juzgado Penal del Circuito Especializado de Bogotá','Juzgado Penal del Circuito de Bogotá','Juzgado Penal Municipal con Función de Control de Garantías','Juzgado Penal Municipal de Conocimiento','Tribunal Superior de Bogotá · Sala Penal','Corte Suprema de Justicia · Sala de Casación Penal'];
+const FISCALIAS = ['Fiscalía Delegada ante los Jueces Penales del Circuito Especializados','Fiscalía Delegada contra la Corrupción','Fiscalía Delegada contra el Lavado de Activos','Fiscalía Seccional','Unidad de Delitos contra la Administración Pública'];
+const CALIDADES_PARTE = ['Procesado / Indiciado','Víctima','Denunciante','Tercero civilmente responsable','Testigo','Perito'];
+const TIPOS_DOC = ['C.C.','C.E.','NIT','Pasaporte','T.I.'];
 const RIESGOS = [{id:'critico',label:'Crítico'},{id:'alto',label:'Alto'},{id:'medio',label:'Medio'},{id:'bajo',label:'Bajo'}];
 const PRIORIDADES = [{id:'critica',label:'Crítica'},{id:'alta',label:'Alta'},{id:'media',label:'Media'},{id:'baja',label:'Baja'}];
 const riskLabel = id => (RIESGOS.find(r=>r.id===id)||{}).label || id;
@@ -101,7 +109,7 @@ const AI_SALIDA = {
 
 /* ---------- permisos por rol (además se filtra por caso, equipo y sensibilidad) ---------- */
 const CP_PERMS = {
-  socio:         {crearCaso:0, editarCaso:0, docs:0, evidencias:0, verificarEvid:0, actuaciones:0, tareas:0, estadoTareas:0, ia:1, revisarIA:1, reportes:1, autorizarCliente:1, auditoria:1, ejecutiva:1, verSensible:1},
+  socio:         {crearCaso:1, editarCaso:0, docs:0, evidencias:0, verificarEvid:0, actuaciones:0, tareas:0, estadoTareas:0, ia:1, revisarIA:1, reportes:1, autorizarCliente:1, auditoria:1, ejecutiva:1, verSensible:1},
   director:      {crearCaso:1, editarCaso:1, docs:1, evidencias:1, verificarEvid:1, actuaciones:1, tareas:1, estadoTareas:1, ia:1, revisarIA:1, reportes:1, autorizarCliente:1, auditoria:1, ejecutiva:1, verSensible:1},
   abogado:       {crearCaso:0, editarCaso:1, docs:1, evidencias:1, verificarEvid:1, actuaciones:1, tareas:1, estadoTareas:1, ia:1, revisarIA:1, reportes:1, autorizarCliente:0, auditoria:1, ejecutiva:0, verSensible:1},
   administrativo:{crearCaso:0, editarCaso:0, docs:1, evidencias:1, verificarEvid:0, actuaciones:0, tareas:0, estadoTareas:1, ia:1, revisarIA:0, reportes:0, autorizarCliente:0, auditoria:0, ejecutiva:0, verSensible:0},

@@ -1,0 +1,94 @@
+/* ============================================================
+   NUEVO DISEÑO · SOLO COLORES (topbar/sidebar oscuros, acento bronce)
+   Se carga al final. Para volver al diseño anterior, quitar este archivo.
+   ============================================================ */
+:root{
+  --bg:#f7f7f8;
+  --topbar-bg:#0a1628;
+  --sidebar-bg:#0f1e36;
+  --on-dark:#e8ecf3;
+  --on-dark-muted:#a9b4c6;
+  --dark-line:rgba(255,255,255,.12);
+  --nav-active:#51627d;
+  --bronze:#7a6652;
+  --bronze-hover:#6a5846;
+  --th-bg:#566a86;
+  --accent:#7a6652;
+  --accent-soft:#f1ece6;
+  --border:#e3e5e9;
+  --border-strong:#d3d7de;
+  --danger:#a8231a;
+}
+
+/* topbar */
+.topbar{background:var(--topbar-bg);border-bottom-color:var(--dark-line);color:var(--on-dark);}
+.tb-menu-item,.sb-brand{color:var(--on-dark);}
+.tb-search{background:rgba(255,255,255,.08);border-color:var(--dark-line);color:var(--on-dark-muted);}
+.tb-search:hover{border-color:var(--on-dark-muted);color:#fff;}
+.tb-icon-btn{color:var(--on-dark);}
+.tb-icon-btn:hover{background:rgba(255,255,255,.1);}
+.case-chip{background:rgba(255,255,255,.08);border-color:var(--dark-line);color:var(--on-dark-muted);}
+.case-chip b{color:var(--on-dark);}
+.role-switch{background:rgba(255,255,255,.08);border-color:var(--dark-line);}
+.role-switch:hover{border-color:var(--on-dark-muted);}
+.role-switch .rs-label b{color:var(--on-dark);}
+.role-switch .rs-label span{color:var(--on-dark-muted);}
+.avatar{background:var(--nav-active);color:#fff;}
+.role-menu .rm-av{background:var(--nav-active);}
+
+/* sidebar */
+.sidebar{background:var(--sidebar-bg);border-right-color:var(--dark-line);}
+.sb-nav li{color:var(--on-dark);}
+.sb-nav li:hover{background:rgba(255,255,255,.08);color:#fff;}
+.sb-nav li.active{background:var(--nav-active);color:#fff;}
+.sb-subnav{border-left-color:var(--dark-line);}
+.sb-divider{background:var(--dark-line);}
+.sb-back{color:var(--on-dark);}
+.sb-back:hover{background:rgba(255,255,255,.08);color:#fff;}
+.sb-chip{background:rgba(255,255,255,.1);color:var(--on-dark);}
+.sb-appearance{color:var(--on-dark-muted);}
+
+/* botones */
+.btn.primary,.btn.accent{background:var(--bronze);border-color:var(--bronze);color:#fff;}
+.btn.primary:hover,.btn.accent:hover{background:var(--bronze-hover);border-color:var(--bronze-hover);}
+.btn:hover{border-color:var(--bronze);}
+.cp-count,.fi-num,.switch.on,.msg.user{background:var(--bronze);}
+.check input{accent-color:var(--bronze);}
+
+/* tablas */
+table.matriz th,.report-paper th{background:var(--th-bg);color:#fff;}
+table.matriz tr.clickable:hover{background:#f1f4f8;}
+.matriz-toolbar{background:#f4f6f9;}
+.kb-col{background:#eceff3;}
+
+/* KPIs y textos de acento */
+.kpi b{color:var(--bronze);}
+.kpi.danger b{color:var(--danger);}
+.kpi.ok b{color:var(--ok);}
+.kpi.warn b{color:var(--warn);}
+.notice.accent{background:var(--accent-soft);border-color:#ddd2c4;color:var(--bronze-hover);}
+
+/* barras de progreso */
+.bar-track{background:#e6e9ee;}
+
+/* ---------- contraste: nada de texto claro sobre fondo claro ---------- */
+.sb-nav li.active{font-weight:700;box-shadow:inset 3px 0 0 var(--bronze);}
+.sb-nav li.active .icon{color:#fff;}
+table.matriz th{font-weight:700;border-bottom-color:#3f5068;}
+.seg button.on{background:var(--bronze);color:#fff;}
+.tag.dark,.wf.archivado{background:#0f1e36;color:#fff;}
+.btn.primary,.btn.accent,.btn.ok,.send-btn,.msg.user,.cp-count,.fi-num,.agent-avatar,.toast{color:#fff;}
+.send-btn,.agent-avatar{background:var(--bronze);}
+.btn.primary:hover,.btn.accent:hover,.btn.ok:hover{color:#fff;opacity:1;}
+.btn.subtle{color:var(--text-muted);}
+.btn.subtle:hover{color:var(--text);background:rgba(15,30,54,.06);}
+.btn.danger{background:#fff;color:var(--danger);}
+.badge.now,.pill-state.revision,.wf.revision,.tag.accent,.ai-status.info{background:var(--accent-soft);color:var(--bronze-hover);}
+.role-icon{background:var(--accent-soft);color:var(--bronze-hover);}
+.sb-nav li .nav-badge,.cp-bell .bell-count{background:var(--danger);color:#fff;}
+/* texto oscuro sobre fondos claros dentro del topbar (menú de roles) */
+.role-menu,.role-menu button{color:var(--text);}
+.role-menu button.active{background:var(--accent-soft);color:var(--bronze-hover);}
+
+/* lista de casos: su regla con id tapaba el color de cabecera de las demás tablas */
+#cpListMode table.matriz thead th{background:var(--th-bg);color:#fff;}

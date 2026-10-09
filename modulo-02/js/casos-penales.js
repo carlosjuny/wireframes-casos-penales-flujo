@@ -316,6 +316,14 @@ function vencRowHtml(v={label:'',fecha:''}){
     <div class="form-field"><input type="date" class="fv-fecha" value="${esc(v.fecha)}"></div>
     <button type="button" class="btn sm subtle fv-del">Quitar</button></div>`;
 }
+function parteRowHtml(p={nombre:'',calidad:'',tipoDoc:'C.C.',numero:''}){
+  return `<div class="form-grid parte-row" style="grid-template-columns:2fr 1.5fr 0.8fr 1.2fr auto;margin-bottom:8px;align-items:end;">
+    <div class="form-field"><input class="fp-nombre" placeholder="Nombre completo" value="${esc(p.nombre)}"></div>
+    <div class="form-field"><select class="fp-calidad">${opts(CALIDADES_PARTE, p.calidad, 'Calidad...')}</select></div>
+    <div class="form-field"><select class="fp-tipodoc">${opts(TIPOS_DOC, p.tipoDoc)}</select></div>
+    <div class="form-field"><input class="fp-numero" inputmode="numeric" placeholder="Número" value="${esc(p.numero)}"></div>
+    <button type="button" class="btn sm subtle fp-del">Quitar</button></div>`;
+}
 function openCaseForm(c){
   const edit = !!c;
   if(edit ? !can('editarCaso', c) : !can('crearCaso')){ showToast('Tu rol no tiene permiso para esta acción.'); return; }
@@ -323,7 +331,9 @@ function openCaseForm(c){
   const v = c || {id:nextCaseCode(), cliente:'', titulo:'', tipoCaso:'Defensa técnica', area:'', etapa:'Indagación preliminar', riesgo:'medio', prioridad:'media', wf:'borrador',
     resp:{socio:'u-socio', director:'u-dir', abogado:'', equipo:[], admin:''},
     fechas:{creacion:today, inicio:today, proximoHito:{label:'',fecha:''}, vencimientos:[], relevantes:''},
-    descripcion:'', contexto:'', observaciones:'', infoSensible:'', config:{conf:'Confidencial', autorizados:[], visibleCliente:false, reglas:''}};
+    descripcion:'', contexto:'', observaciones:'', infoSensible:'', config:{conf:'Confidencial', autorizados:[], visibleCliente:false, reglas:''},
+    calidadRep:'', ley:'', radicado:'', delitos:[], despacho:'', fiscalia:'', partes:[], resumenHechos:''};
+  v.calidadRep = v.calidadRep||''; v.ley = v.ley||''; v.radicado = v.radicado||''; v.delitos = v.delitos||[]; v.despacho = v.despacho||''; v.fiscalia = v.fiscalia||''; v.partes = v.partes||[]; v.resumenHechos = v.resumenHechos||'';
   const clientes = [...new Set(CASES.map(x=>x.cliente))];
   const byRol = r => PEOPLE.filter(p=>p.rol===r).map(p=>({id:p.id,label:p.nombre}));
   const body = `
@@ -339,6 +349,13 @@ function openCaseForm(c){
         ${ff('Nivel de riesgo', `<select id="fcRiesgo">${opts(RIESGOS, v.riesgo)}</select>`, {req:1})}
         ${ff('Estado', `<input value="${esc(wfLabel(v.wf))}" readonly>`, {hint:'Controlado por el flujo del caso'})}
         ${ff('Prioridad', `<select id="fcPrioridad">${opts(PRIORIDADES, v.prioridad)}</select>`, {req:1})}
+        ${ff('Calidad de representación', `<select id="fcCalidadRep">${opts(CALIDADES_REP, v.calidadRep, 'Seleccionar...')}</select>`, {req:!edit, id:'fcCalidadRep'})}
+        ${ff('Ley aplicable', `<select id="fcLey">${opts(LEYES, v.ley, 'Seleccionar...')}</select>`, {req:!edit, id:'fcLey'})}
+        ${ff('Radicado', `<input id="fcRadicado" inputmode="numeric" maxlength="23" value="${esc(v.radicado)}" placeholder="Solo números">`, {req:!edit, id:'fcRadicado'})}
+        ${ff('Despacho judicial', `<select id="fcDespacho">${opts(DESPACHOS, v.despacho, 'Seleccionar...')}</select>`, {req:!edit, id:'fcDespacho'})}
+        ${ff('Fiscalía', `<select id="fcFiscalia">${opts(FISCALIAS, v.fiscalia, 'Seleccionar...')}</select>`, {req:!edit, id:'fcFiscalia'})}
+        ${ff('Delitos', `<div class="check-grid">${DELITOS.map(d=>`<label class="check"><input type="checkbox" class="fcDelito" value="${esc(d)}" ${v.delitos.includes(d)?'checked':''}>${esc(d)}</label>`).join('')}</div>`, {full:1, req:!edit, id:'fcDelitos'})}
+        ${ff('Partes procesales', `<div id="fcPartes">${v.partes.map(parteRowHtml).join('')}</div><button type="button" class="btn sm" id="fcAddParte" style="margin-top:6px;">+ Agregar parte</button>`, {full:1})}
       </div></div>
     <div class="form-section"><h4><i>B</i>Responsables</h4>
       <div class="form-grid cols-3">
@@ -365,6 +382,7 @@ function openCaseForm(c){
     <div class="form-section"><h4><i>D</i>Información del caso</h4>
       <div class="form-grid">
         ${ff('Descripción', `<textarea id="fcDescripcion">${esc(v.descripcion)}</textarea>`, {full:1, req:1, id:'fcDescripcion'})}
+        ${ff('Resumen de los hechos narrados por el cliente', `<textarea id="fcResumenHechos" placeholder="Describa lo que el cliente relató en la primera reunión...">${esc(v.resumenHechos)}</textarea>`, {full:1})}
         ${ff('Contexto', `<textarea id="fcContexto">${esc(v.contexto)}</textarea>`)}
         ${ff('Observaciones', `<textarea id="fcObs">${esc(v.observaciones)}</textarea>`)}
         ${ff(`${I('lock').replace('class="icon"','class="icon" style="display:inline;width:11px;height:11px;vertical-align:-1px;"')} Información sensible`, `<textarea id="fcSensible" placeholder="Solo visible para Socio, Director y Abogados autorizados">${esc(v.infoSensible)}</textarea>`, {full:1})}
@@ -392,6 +410,11 @@ function openCaseForm(c){
   const bindDel = ()=> vencs.querySelectorAll('.fv-del').forEach(b=> b.onclick = ()=> b.closest('.venc-row').remove());
   bindDel();
   bodyEl.querySelector('#fcAddVenc').addEventListener('click', ()=>{ vencs.insertAdjacentHTML('beforeend', vencRowHtml()); bindDel(); });
+  const partes = bodyEl.querySelector('#fcPartes');
+  const bindParte = ()=> partes.querySelectorAll('.fp-del').forEach(b=> b.onclick = ()=> b.closest('.parte-row').remove());
+  bindParte();
+  bodyEl.querySelector('#fcAddParte').addEventListener('click', ()=>{ partes.insertAdjacentHTML('beforeend', parteRowHtml()); bindParte(); });
+  bodyEl.querySelector('#fcRadicado').addEventListener('input', e=>{ e.target.value = e.target.value.replace(/\D/g,''); });
 }
 
 async function submitCaseForm(c){
@@ -404,10 +427,15 @@ async function submitCaseForm(c){
     inicio:val('fcInicio'), hito:{label:val('fcHitoLabel'), fecha:val('fcHitoFecha')},
     vencimientos:[...B.querySelectorAll('.venc-row')].map(r=>({label:r.querySelector('.fv-label').value.trim(), fecha:r.querySelector('.fv-fecha').value})).filter(v=>v.label && v.fecha),
     relevantes:val('fcRelevantes'), descripcion:val('fcDescripcion'), contexto:val('fcContexto'), observaciones:val('fcObs'), infoSensible:val('fcSensible'),
+    calidadRep:val('fcCalidadRep'), ley:val('fcLey'), radicado:val('fcRadicado').replace(/\D/g,''), despacho:val('fcDespacho'), fiscalia:val('fcFiscalia'),
+    delitos:[...B.querySelectorAll('.fcDelito:checked')].map(x=>x.value),
+    partes:[...B.querySelectorAll('.parte-row')].map(r=>({nombre:r.querySelector('.fp-nombre').value.trim(), calidad:r.querySelector('.fp-calidad').value, tipoDoc:r.querySelector('.fp-tipodoc').value, numero:r.querySelector('.fp-numero').value.replace(/\D/g,'')})).filter(p=>p.nombre),
+    resumenHechos:val('fcResumenHechos'),
     conf:val('fcConf'), visibleCliente:B.querySelector('#fcVisible').checked, autorizados:[...B.querySelectorAll('.fcAut:checked')].map(x=>x.value), reglas:val('fcReglas'),
   };
   // 1. validar campos obligatorios
   const req = {fcTitulo:data.titulo, fcCliente:data.cliente, fcTipoCaso:data.tipoCaso, fcArea:data.area, fcEtapa:data.etapa, fcSocio:data.resp.socio, fcDirector:data.resp.director, fcAbogado:data.resp.abogado, fcInicio:data.inicio, fcDescripcion:data.descripcion};
+  if(!edit) Object.assign(req, {fcCalidadRep:data.calidadRep, fcLey:data.ley, fcRadicado:data.radicado, fcDespacho:data.despacho, fcFiscalia:data.fiscalia, fcDelitos:data.delitos.length ? 'ok' : ''});
   B.querySelectorAll('.form-field.invalid').forEach(x=>x.classList.remove('invalid'));
   const faltan = Object.entries(req).filter(([,v])=>!v).map(([k])=>k);
   if(faltan.length){
@@ -420,7 +448,8 @@ async function submitCaseForm(c){
   if(edit){
     const antes = {Título:c.titulo, Cliente:c.cliente, Etapa:c.etapa, Riesgo:riskLabel(c.riesgo), Prioridad:prioLabel(c.prioridad), 'Abogado responsable':pName(c.resp.abogado), Confidencialidad:c.config.conf, 'Visible para cliente':c.config.visibleCliente?'Sí':'No'};
     Object.assign(c, {titulo:data.titulo, cliente:data.cliente, nombre:data.cliente, tipoCaso:data.tipoCaso, area:data.area, etapa:data.etapa, riesgo:data.riesgo, prioridad:data.prioridad,
-      resp:data.resp, descripcion:data.descripcion, contexto:data.contexto, observaciones:data.observaciones, infoSensible:data.infoSensible});
+      resp:data.resp, descripcion:data.descripcion, contexto:data.contexto, observaciones:data.observaciones, infoSensible:data.infoSensible,
+      calidadRep:data.calidadRep, ley:data.ley, radicado:data.radicado, delitos:data.delitos, despacho:data.despacho, fiscalia:data.fiscalia, partes:data.partes, resumenHechos:data.resumenHechos});
     c.fechas = {...c.fechas, inicio:data.inicio, proximoHito:data.hito, vencimientos:data.vencimientos, relevantes:data.relevantes};
     c.config = {conf:data.conf, autorizados, visibleCliente:data.visibleCliente, reglas:data.reglas};
     const despues = {Título:c.titulo, Cliente:c.cliente, Etapa:c.etapa, Riesgo:riskLabel(c.riesgo), Prioridad:prioLabel(c.prioridad), 'Abogado responsable':pName(c.resp.abogado), Confidencialidad:c.config.conf, 'Visible para cliente':c.config.visibleCliente?'Sí':'No'};
@@ -447,6 +476,7 @@ async function submitCaseForm(c){
     config:{conf:data.conf, autorizados, visibleCliente:data.visibleCliente, reglas:data.reglas},
     situacion:{actual:'Caso recién creado: pendiente de cargar documentación inicial.', bloqueado:''},
     creadoPor:currentUser().id, creadoTs:nowIso(), ultimoEditor:currentUser().id});
+  Object.assign(nuevo, {calidadRep:data.calidadRep, ley:data.ley, radicado:data.radicado, delitos:data.delitos, despacho:data.despacho, fiscalia:data.fiscalia, partes:data.partes, resumenHechos:data.resumenHechos});
   logAudit(nuevo, 'Creación del caso', 'Case', id, `Caso ${id} registrado en estado Borrador`, {cliente:data.cliente});
   logAudit(nuevo, 'Vinculación con cliente', 'Case', id, `Cliente: ${data.cliente}`);
   logAudit(nuevo, 'Asignación de responsables', 'Case', id, `Abogado: ${pName(data.resp.abogado)} · Director: ${pName(data.resp.director)} · Socio: ${pName(data.resp.socio)}`);
@@ -489,6 +519,7 @@ function renderDetail(){
   document.getElementById('cdSub').textContent = c.tipo + ' · Responsable actual: ' + roleById(c.responsableRole).nombre;
   document.getElementById('cpBtnEditar').style.display = can('editarCaso', c) ? '' : 'none';
   document.getElementById('btnAddEvidencia').style.display = can('evidencias', c) ? '' : 'none';
+  document.getElementById('btnNuevoHechoBar').style.display = can('evidencias', c) ? '' : 'none';
   renderCaseMeta(c);
   renderTabs(c);
   renderActivePanel(c);
@@ -641,7 +672,15 @@ function renderResumen(c){
             <div><label>Prioridad</label><span>${prioTag(c.prioridad)}</span></div>
             <div><label>Etapa procesal</label><span>${esc(c.etapa)}</span></div>
             <div><label>Nivel de riesgo</label><span>${riskPill(c.riesgo)}</span></div>
+            ${c.radicado ? `<div><label>Radicado</label><span>${esc(c.radicado)}</span></div>` : ''}
+            ${c.calidadRep ? `<div><label>Calidad de representación</label><span>${esc(c.calidadRep)}</span></div>` : ''}
+            ${c.ley ? `<div><label>Ley aplicable</label><span>${esc(c.ley)}</span></div>` : ''}
+            ${c.despacho ? `<div><label>Despacho judicial</label><span>${esc(c.despacho)}</span></div>` : ''}
+            ${c.fiscalia ? `<div><label>Fiscalía</label><span>${esc(c.fiscalia)}</span></div>` : ''}
+            ${(c.delitos||[]).length ? `<div><label>Delitos</label><span>${c.delitos.map(esc).join(' · ')}</span></div>` : ''}
           </div>
+          ${(c.partes||[]).length ? `<h4 style="margin:16px 0 6px;font-size:12px;">Partes procesales</h4><ul class="sit-list">${c.partes.map(p=>`<li><b>${esc(p.nombre)}</b> · ${esc(p.calidad||'—')} · ${esc(p.tipoDoc)} ${esc(p.numero)}</li>`).join('')}</ul>` : ''}
+          ${c.resumenHechos ? `<h4 style="margin:16px 0 6px;font-size:12px;">Hechos narrados por el cliente</h4><p style="font-size:13.2px;line-height:1.6;margin:0;">${esc(c.resumenHechos)}</p>` : ''}
           <p style="font-size:13.2px;line-height:1.6;margin:16px 0 0;">${esc(c.descripcion)}</p>
           ${c.infoSensible ? (can('verSensible') ? `<div class="notice warn" style="margin:12px 0 0;">${I('lock')}<span><b>Información sensible:</b> ${esc(c.infoSensible)}</span></div>` : `<p class="lock" style="margin-top:10px;">${I('lock')} Información sensible restringida para tu rol</p>`) : ''}
         </div>
@@ -679,7 +718,7 @@ function renderExpediente(c){
   const al = alertasCaso(c).filter(a=>a.nivel!=='verde');
   const versiones = c.documentos.reduce((s,d)=>s+d.versiones.length,0);
   const node = (tab, label, sub) => `<li><div class="t-node" data-go="${tab}"><span>${label}</span><small>${sub}</small></div></li>`;
-  const hechos = Object.keys(HECHOS).map(h=>{ const evs=c.matriz.filter(m=>m.hecho===h); return {h, evs}; });
+  const hechos = Object.keys(hechosDe(c)).map(h=>{ const evs=c.matriz.filter(m=>m.hecho===h); return {h, evs}; });
   document.getElementById('cpExpediente').innerHTML = `
     <div class="grid-21">
       <div class="stack">
@@ -699,7 +738,7 @@ function renderExpediente(c){
           </div>
         </div>
         <div class="panel"><div class="panel-head"><div><h3>Hechos investigados y soporte probatorio</h3><p class="ph-sub">Relación entre hechos, evidencias y su estado de revisión.</p></div></div>
-          <div class="grid-2">${hechos.map(x=>`<div class="hecho-card"><h5>${x.h} · ${HECHOS[x.h]}</h5>${x.evs.length ? `<ul>${x.evs.map(e=>`<li>${esc(e.ev)} — <span class="pill-state ${e.estado}" style="font-size:9.8px;">${stateLabel(e.estado)}</span></li>`).join('')}</ul>` : '<p class="muted small" style="margin:0;">Sin evidencia registrada.</p>'}</div>`).join('')}</div>
+          <div class="grid-2">${hechos.map(x=>`<div class="hecho-card"><h5>${x.h} · ${hechoNom(c,x.h)}</h5>${x.evs.length ? `<ul>${x.evs.map(e=>`<li>${esc(e.ev)} — <span class="pill-state ${e.estado}" style="font-size:9.8px;">${stateLabel(e.estado)}</span></li>`).join('')}</ul>` : '<p class="muted small" style="margin:0;">Sin evidencia registrada.</p>'}</div>`).join('')}</div>
         </div>
       </div>
       <div class="stack">
@@ -923,7 +962,7 @@ function openEvidenceDetail(row){
     <h4>Identificación</h4>
     <dl class="kv">
       <dt>ID</dt><dd>${row.id}</dd><dt>Tipo</dt><dd>${esc(row.tipo)}</dd><dt>Fuente</dt><dd>${esc(row.fuente)}</dd>
-      <dt>Fecha</dt><dd>${fmtFecha(row.fecha)}</dd><dt>Hecho</dt><dd>${row.hecho} · ${HECHOS[row.hecho]}</dd>
+      <dt>Fecha</dt><dd>${fmtFecha(row.fecha)}</dd><dt>Hecho</dt><dd>${row.hecho} · ${hechoNom(c,row.hecho)}</dd>
       <dt>Pretende demostrar</dt><dd>${esc(row.pretende)}</dd>
       <dt>Documento asociado</dt><dd>${d ? `<button class="link-btn" id="cpEvDoc">${esc(d.nombre)} (v${d.version})</button>` : '<span class="muted">Sin documento</span>'}</dd>
       <dt>Estado de revisión</dt><dd><span class="pill-state ${row.estado}">${stateLabel(row.estado)}</span></dd>
@@ -1132,14 +1171,14 @@ function generarAnalisis(c, agentId, docIds, evIds, solicitante, ts){
   const docs = c.documentos.filter(d=>docIds.includes(d.id));
   const evs = c.matriz.filter(m=>evIds.includes(m.id));
   const ver = evs.filter(e=>e.estado==='verificada'), rev = evs.filter(e=>e.estado==='revision'), pen = evs.filter(e=>e.estado==='pendiente');
-  const hechos = Object.keys(HECHOS).map(h=>({h, total:evs.filter(e=>e.hecho===h).length, ver:evs.filter(e=>e.hecho===h && e.estado==='verificada').length})).filter(x=>x.total);
+  const hechos = Object.keys(hechosDe(c)).map(h=>({h, total:evs.filter(e=>e.hecho===h).length, ver:evs.filter(e=>e.hecho===h && e.estado==='verificada').length})).filter(x=>x.total);
   const tVenc = c.tareas.filter(t=>t.estado!=='Completada' && diasHasta(t.fecha)<0);
   const venc = proximoVencimiento(c);
 
   const hallazgos = [];
-  rev.filter(e=>e.relev==='alta').forEach(e=> hallazgos.push(`«${e.ev}» (relevancia alta) sigue en revisión y sostiene el hecho ${e.hecho} · ${HECHOS[e.hecho]}.`));
+  rev.filter(e=>e.relev==='alta').forEach(e=> hallazgos.push(`«${e.ev}» (relevancia alta) sigue en revisión y sostiene el hecho ${e.hecho} · ${hechoNom(c,e.hecho)}.`));
   pen.forEach(e=> hallazgos.push(`«${e.ev}» está pendiente de recaudo: ${e.obs}`));
-  hechos.filter(x=>x.ver===0).forEach(x=> hallazgos.push(`El hecho ${x.h} · ${HECHOS[x.h]} no cuenta con evidencia verificada entre los elementos analizados.`));
+  hechos.filter(x=>x.ver===0).forEach(x=> hallazgos.push(`El hecho ${x.h} · ${hechoNom(c,x.h)} no cuenta con evidencia verificada entre los elementos analizados.`));
   docs.filter(d=>d.versiones.length>1).forEach(d=> hallazgos.push(`«${d.nombre}» tiene ${d.versiones.length} versiones; el análisis usó la versión v${d.version}.`));
   if(ver.length) hallazgos.push(`${ver.length} de ${evs.length} evidencias analizadas están verificadas y pueden soportar la posición del caso.`);
   if(!hallazgos.length) hallazgos.push('No se identifican vacíos probatorios en los elementos seleccionados.');
@@ -1401,7 +1440,7 @@ function buildReportHtml(c, tipo, aud, porId){
     const ia = iaAprobados(c, ['probatorio','gestion']);
     const clasif = {}; c.matriz.forEach(m=> clasif[m.tipo]=(clasif[m.tipo]||0)+1);
     return `${head}
-      <h2>Evidencias</h2><table><tr><th>Evidencia</th><th>Tipo</th><th>Hecho</th><th>Estado</th><th>Relevancia</th><th>Documento</th></tr>${c.matriz.map(m=>`<tr><td>${esc(m.ev)}</td><td>${esc(m.tipo)}</td><td>${m.hecho} · ${HECHOS[m.hecho]}</td><td>${stateLabel(m.estado)}</td><td>${relevLabel(m.relev)}</td><td>${esc(docName(c,m.docId)||'—')}</td></tr>`).join('')}</table>
+      <h2>Evidencias</h2><table><tr><th>Evidencia</th><th>Tipo</th><th>Hecho</th><th>Estado</th><th>Relevancia</th><th>Documento</th></tr>${c.matriz.map(m=>`<tr><td>${esc(m.ev)}</td><td>${esc(m.tipo)}</td><td>${m.hecho} · ${hechoNom(c,m.hecho)}</td><td>${stateLabel(m.estado)}</td><td>${relevLabel(m.relev)}</td><td>${esc(docName(c,m.docId)||'—')}</td></tr>`).join('')}</table>
       <h2>Documentos</h2><table><tr><th>Documento</th><th>Categoría</th><th>Versión</th><th>Sensibilidad</th></tr>${c.documentos.map(d=>`<tr><td>${esc(d.nombre)}</td><td>${esc(d.categoria)}</td><td>v${d.version}</td><td>${esc(d.sensibilidad)}</td></tr>`).join('')}</table>
       <h2>Clasificaciones</h2>${li(Object.entries(clasif).map(([k,v])=>`${k}: ${v}`))}
       <h2>Hallazgos</h2>${li([...new Set(ia.flatMap(a=>a.result.hallazgos))])}
@@ -1709,7 +1748,7 @@ function onRoleChangeCP(){
    ============================================================ */
 function initCasosPenales(){
   cpSeedData();
-  setSlot('icon-slot-ejecutiva', I('chart') + '<span>Vista ejecutiva</span>');
+  setSlot('icon-slot-ejecutiva', I('chart') + '<span>Dashboard</span>');
   setSlot('icon-slot-cpsearch', I('search'));
   setSlot('btnSalir', I('logout') + '<span>Salir</span>');
   document.getElementById('btnSalir').addEventListener('click', ()=>{
